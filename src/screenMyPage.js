@@ -1,15 +1,17 @@
 import React, { useState } from 'react';
-import { Text, View, StyleSheet } from 'react-native';
+import { Text, View, ScrollView, Image, StyleSheet } from 'react-native';
 import Theme from './theme';
 import { Button } from 'renative';
 import { FlatList } from 'react-native-gesture-handler';
+import theme from './theme';
 
 class ScreenMyPage extends React.Component {
     constructor() {
         super();
         this.state = {
             myState: 'Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed',
-            data: []
+            data: [],
+            filesWithThumbs: []
         };
     }
 
@@ -19,24 +21,34 @@ class ScreenMyPage extends React.Component {
 
         const getFilesAndFolders = () => global.client.listfolder(0).then(metadata => {
             this.setState({ data: metadata.contents });
-            console.log(metadata.contents);
+            console.log("metadata.contents ====>", metadata.contents);
+            const filesWithThumbs = withThumbs(metadata.contents);
+            if (filesWithThumbs) {
+                const fileIds = filesWithThumbs.map(file => file.fileid);
+                global.client.getthumbs(fileIds, thumb => console.log(thumb), 'auto', '128x128', (thumb) => console.log('got thumb', thumb))
+                .then(thumbMap => this.setState({ filesWithThumbs: thumbMap }));
+            }
         })
 
-        function Item({ title }) {
-            console.log({ title });
-            // const [data, setData] = useState([]);
+        const withThumbs = (contents) => {
+            return contents.filter(file => file.thumb);
+          }
+
+        function ImageItem(item) {
             return (
                 <View>
-                    <Text>{title}</Text>
+                    <Image style={{width: 128, height: 128}}
+                        source={item.url}
+                    >
+                    </Image>
                 </View>
             );
         }
 
         function Item2(item) {
-            console.log(item)
             return (
-                <View >
-                    <Text style={styles.textH2}>
+                <View style={styles.container}>
+                    <Text style={styles.textH3}>
                         {item.name + " " + item.contenttype}
                     </Text>
                 </View>
@@ -47,17 +59,25 @@ class ScreenMyPage extends React.Component {
             <View style={styles.container}>
                 <Text style={styles.textH2}>
                     This is my Page!
-        </Text>
+                </Text>
                 <Button
                     title='get list'
                     onPress={getFilesAndFolders} />
                 <View>
                     {<FlatList
                         data={this.state.data}
-                        renderItem={({ item }) => Item2(item)/* <Item title={item.name + item.contenttype} /> */}
+                        renderItem={({ item }) => Item2(item)}
                         keyExtractor={item => item.id}
                     />
-                        // this.state.data.map((content) => <Text>{content.name}</Text>)
+                    }
+                </View>
+                <View style={styles.gallery}>
+                    {<FlatList
+                        data={this.state.filesWithThumbs}
+                        renderItem={({ item }) => ImageItem(item)}
+                        keyExtractor={item => item.fileid.toString()}
+                        numColumns={4}
+                    />
                     }
                 </View>
             </View>
@@ -71,6 +91,7 @@ const styles = StyleSheet.create({
         backgroundColor: Theme.color1,
         justifyContent: 'center',
         alignItems: 'center',
+        overflow: "scroll"
     },
     textH2: {
         fontFamily: 'TimeBurner',
@@ -80,8 +101,23 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    list: {
-
+    textH3: {
+        fontFamily: 'Sans',
+        fontSize: 15,
+        marginHorizontal: 20,
+        marginTop: 5,
+        color: Theme.color3,
+        justifyContent: 'center',
+        alignItems: 'center',
+        textAlign: 'center',
+        borderBottomWidth: 2,
+        borderColor: theme.color4,
+        padding: 10
+    },
+    gallery: {
+        margin: 10,
+        flexDirection: "row",
+        justifyContent: "center"
     }
 });
 
