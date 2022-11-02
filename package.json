@@ -20,7 +20,7 @@
         "renative": "0.27.6"
     },
     "devDependencies": {
-        "rnv": "0.27.6",
+        "rnv": "0.36.1",
         "renative-template-hello-world": "0.28.11"
     }
 }
